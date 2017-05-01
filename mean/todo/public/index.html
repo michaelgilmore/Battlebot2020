@@ -1,0 +1,74 @@
+<!-- ASSIGN OUR ANGULAR MODULE -->
+<html ng-app="todo">
+<head>
+    <!-- META -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Optimize mobile viewport -->
+
+    <title>Node/Angular Todo App</title>
+
+    <!-- SCROLLS -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"><!-- load bootstrap -->
+    <style>
+        html                    { overflow-y:scroll; }
+        #todo-list              { margin-bottom:30px; }
+    </style>
+
+    <!-- SPELLS -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script><!-- load jquery -->
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script><!-- load angular -->
+    <script src="core.js"></script>
+
+</head>
+<!-- SET THE CONTROLLER AND GET ALL TODOS -->
+<body ng-controller="mainController">
+    <!-- HEADER AND TODO COUNT -->
+    <div id="header" class="jumbotron text-center">
+        <h1>
+            <div id="title" style="position: absolute; left: 10px; top: 10px">2Du</div>
+        </h1>
+
+        <!-- FORM TO CREATE TODOS -->
+        <div id="todo-form" style="float: right; width: 75%">
+            <div class="text-center">
+                <form>
+                    <div class="form-group">
+                        <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
+                        <input class="form-control input-lg text-center"
+                            type="text"
+                            placeholder="Detect dark matter" 
+                            ng-model="formData.text"
+                            style="width: 80%; float: left">
+                        <button class="btn btn-primary btn-lg" 
+                            type="submit"
+                            ng-click="createTodo()">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <h2 style="text-align: center"><div id="count-text">Count: {{ todos.length }}</div></h2>
+
+    <div class="container">
+        <!-- TODO LIST -->
+        <div id="todo-list" class="row" style="margin-left: 30px">
+            <div class="col-sm-4 col-sm-offset-4">
+                <!-- LOOP OVER THE TODOS IN $scope.todos -->
+                <div class="checkbox" ng-repeat="todo in todos">
+                    <label>
+                        <input type="checkbox" ng-click="deleteTodo(todo._id)"> 
+                        <div id="todo-div">
+                            <div id="todo-text-div">{{ todo.text }}</div>
+                            <div id="todo-label-div">{{ todo.label }}</div>
+                            <div id="todo-date-entered-div">{{ todo.date_entered | date:'MM/dd/yy' }}</div> 
+                            <div id="todo-date-due-div">{{ todo.date_due | date:'MM/dd/yy' }}</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

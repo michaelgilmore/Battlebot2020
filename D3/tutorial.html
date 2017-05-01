@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!--http://alignedleft.com/tutorials/d3/drawing-divs-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script type="text/javascript" src="d3.v3.min.js"></script>
+        <script type="text/javascript" src="d3.geom.js"></script>
+        <script type="text/javascript" src="d3.layout.js"></script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            //Step 1
+            setTimeout(function(){
+                window.location.reload(1);
+            }, 5000);
+            //Step 2
+            //2 var dataset = [5,10,15,20,25];
+            var dataset = [
+                "AController",
+                "BController",
+                "CTransform",
+                "DDao",
+                "EEnum",
+                "FDao",
+                "GController",
+                "HView",
+                "IView"
+            ];
+            d3.select("body").selectAll("p")
+                .data(dataset)
+                .enter()
+                .append("p")
+                //1 .text("New pararaph!!!");
+                .text(function(d) {return d;})
+                .style("color", function(d) {
+                    //2 if(d>15) {
+                    if(d.indexOf("Controller") > -1) {
+                        return "red";
+                    }
+                    else {
+                        return "blue";
+                    }
+                });
+        </script>
+    </body>
+</html>

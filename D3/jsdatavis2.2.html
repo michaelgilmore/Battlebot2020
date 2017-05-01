@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Force Layout Example 2</title>
+    <style>
+.link {
+    stroke: green;
+    stroke-width: 2px;
+}
+.node circle {
+    fill: gray;
+    stroke: black;
+}
+.node text {
+    stroke: black;
+    font: 12px sans-serif;
+}
+    </style>
+</head>
+<body>
+    <script src='d3.v3.min.js'></script>
+    <script src='thedata.js'></script>
+<!--
+/*
+//The Data
+var graph = {
+    "nodes": [],
+    "links": []
+    };
+*/
+-->
+    <script>
+//Dimensions of the visualization
+var width = 1200,
+    height = 600;
+
+//Start off by creating an SVG container to hold the visualization
+var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+// Extract the nodes and links from the data.
+var nodes = graph.nodes,
+    links = graph.links;
+
+// Now we create a force layout object and define its properties.
+// Those include the dimensions of the visualization and the arrays
+// of nodes and links.
+var force = d3.layout.force()
+    .size([width, height])
+    .nodes(nodes)
+    .links(links);
+
+// To keep the two distinct graphs from getting mixed up with
+// each other, we'll disable the `gravity` property. We'll explore
+// this property in a later example, but note that, in general,
+// you probably don't want to do this. We can get away with it
+// here because we're carefully controlling the graphs.
+
+force.gravity(0.1);//default = 0.1
+
+// Define the `linkDistance` for both graphs. This is the
+// distance we desire between connected nodes.
+
+force.linkDistance(height/6);
+
+// Here's the part where we make the two graphs differ. Because
+// we're looking at the `charge` property, that's what we
+// want to vary between the graphs. Most often this property is
+// set to a constant value for an entire visualization, but D3
+// also lets us define it as a function. When we do that, we
+// can set a different value for each node.
+
+// Negative charge values indicate repulsion, which is generally
+// desirable for force-directed graphs. (Positive values indicate
+// attraction and can be helpful for other visualization types.)
+
+force.charge(function(node) {
+   return -100;
+});
+    
+// To highlight the effect of `charge`, we reduce the rigidity
+// of the links. More about this property in another example.
+
+force.linkStrength(0.1);
+    
+var link = svg.selectAll('.link')
+    .data(links)
+    .enter().append('line')
+    .attr('class', 'link');
+
+var node = svg.selectAll(".node")
+    .data(nodes)
+    .enter().append("g")
+    .attr("class", "node")
+    .call(force.drag);
+
+node.append('circle')
+    .attr('r', width/300)
+    .on('mouseover', function(d) {
+        console.log(d.name);        
+    })
+    .on('mouseout', function(d) {
+    })
+    .on('click', function(d) {
+        alert(d.name);
+    });
+
+/*
+node.append("text")
+    .attr("dx", 12)
+    .attr("dy", ".35em")
+    .text(function(d) { return d.name });
+*/
+
+force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+});
+
+force.start();
+    </script>
+</body>
+</html>

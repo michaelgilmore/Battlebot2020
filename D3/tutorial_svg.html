@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!--http://alignedleft.com/tutorials/d3/drawing-divs-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script type="text/javascript" src="d3.v3.min.js"></script>
+        <script type="text/javascript" src="d3.geom.js"></script>
+        <script type="text/javascript" src="d3.layout.js"></script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            //Step 1
+            setTimeout(function(){
+                window.location.reload(1);
+            }, 5000);
+            //Step 2
+            //2 var dataset = [5,10,15,20,25];
+            var dataset = [
+                "AController",
+                "BController",
+                "CTransform",
+                "DDao",
+                "EEnum",
+                "FDao",
+                "GController",
+                "HView",
+                "IView"
+            ];
+            d3.select("body").selectAll("p")
+                .data(dataset)
+                .enter()
+                .append("p")
+                //1 .text("New pararaph!!!");
+                .text(function(d) {return d;})
+                .style("color", function(d) {
+                    //2 if(d>15) {
+                    if(d.indexOf("Controller") > -1) {
+                        return "red";
+                    }
+                    else {
+                        return "blue";
+                    }
+                });
+        </script>
+        <style>
+        .pumpkin {
+            fill: yellow;
+            stroke: rgba(0, 255, 0, 0.25);
+            stroke-width: 5;
+            opacity: 0.5;
+        }
+        </style>
+        <svg width="300" height="300">
+            <!--rect, circle, ellipse, line, text, 
+            path(complicated drawings, e.g. country outlines)-->
+            <!--0,0 is top left-->
+            <rect x="0" y="0" width="50" height="50" fill="rgba(128,128,128,0.9)"/>
+            <circle cx="25" cy="25" r="20" class="pumpkin"/>
+            <ellipse cx="100" cy="25" rx="25" ry="20"/>
+            <line x1="10" y1="10" x2="200" y2="20" stroke="blue" stroke-width="10"/>
+            <text x="150" y="40" font-size="20" fill="pink">Floating text</text>
+        </svg>
+    </body>
+</html>

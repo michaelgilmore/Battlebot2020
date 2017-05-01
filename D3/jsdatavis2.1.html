@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Force Layout Example 2</title>
+    <style>
+.node {
+    fill: #ccc;
+    stroke: #111;
+    stroke-width: 2px;
+    font-family: 'sans-serif';
+}
+.link {
+    stroke: #777;
+    stroke-width: 2px;
+}
+.node text {
+    pointer-events: none;
+    font: 10px sans-serif;
+}
+    </style>
+</head>
+<body>
+    <script src='d3.v3.min.js'></script>
+    <script>
+//Dimensions of the visualization
+var width = 640,
+    height = 480;
+
+//Start off by creating an SVG container to hold the visualization
+var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+//The data
+var graph = {
+    "nodes": [  { "name": "A", "x": 208.992345, "y": 273.053211 },
+                { "name": "B", "x": 595.98896,  "y":  56.377057 },
+                { "name": "C", "x": 319.568434, "y": 278.523637 },
+                { "name": "D", "x": 214.494264, "y": 214.893585 },
+                { "name": "E", "x": 482.664139, "y": 340.386773 },
+                { "name": "F", "x":  84.078465, "y": 192.021902 },
+                { "name": "G", "x": 196.952261, "y": 370.798667 },
+                { "name": "H", "x": 107.358165, "y": 435.15643  },
+                { "name": "I", "x": 401.168523, "y": 443.407779 },
+                { "name": "J", "x": 508.368779, "y": 386.665811 },
+                { "name": "K", "x": 355.93773,  "y": 460.158711 },
+                { "name": "L", "x": 283.630624, "y":  87.898162 },
+                { "name": "M", "x": 194.771218, "y": 436.366028 },
+                { "name": "N", "x": 477.520013, "y": 337.547331 },
+                { "name": "O", "x": 572.98129,  "y": 453.668459 },
+                { "name": "P", "x": 106.717817, "y": 235.990363 },
+                { "name": "Q", "x": 265.064649, "y": 396.904945 },
+                { "name": "R", "x": 452.719997, "y": 137.886092 }
+            ],
+    "links": [  { "target": 11, "source":  0 },
+                { "target":  3, "source":  0 },
+                { "target": 10, "source":  0 },
+                { "target": 16, "source":  0 },
+                { "target":  1, "source":  0 },
+                { "target":  3, "source":  0 },
+                { "target":  9, "source":  0 },
+                { "target":  5, "source":  0 },
+                { "target": 11, "source":  0 },
+                { "target": 13, "source":  0 },
+                { "target": 16, "source":  0 },
+                { "target":  3, "source":  1 },
+                { "target":  9, "source":  1 },
+                { "target": 12, "source":  1 },
+                { "target":  4, "source":  2 },
+                { "target":  6, "source":  2 },
+                { "target":  8, "source":  2 },
+                { "target": 13, "source":  2 }
+            ]
+    };
+
+// Extract the nodes and links from the data.
+var nodes = graph.nodes,
+    links = graph.links;
+
+// Now we create a force layout object and define its properties.
+// Those include the dimensions of the visualization and the arrays
+// of nodes and links.
+var force = d3.layout.force()
+    .size([width, height])
+    .nodes(nodes)
+    .links(links);
+
+//Use default?
+//force.linkDistance(width/3.05);
+
+// Next we'll add the nodes and links to the visualization.
+// Note that we're just sticking them into the SVG container
+// at this point. We start with the links. The order here is
+// important because we want the nodes to appear "on top of"
+// the links. SVG doesn't really have a convenient equivalent
+// to HTML's `z-index`; instead it relies on the order of the
+// elements in the markup. By adding the nodes _after_ the
+// links we ensure that nodes appear on top of links.
+
+// Links are pretty simple. They're just SVG lines, and
+// we're not even going to specify their coordinates. (We'll
+// let the force layout take care of that.) Without any
+// coordinates, the lines won't even be visible, but the
+// markup will be sitting inside the SVG container ready
+// and waiting for the force layout.
+var link = svg.selectAll('.link')
+    .data(links)
+    .enter().append('line')
+    .attr('class', 'link');
+
+var node = svg.selectAll(".node")
+    .data(nodes)
+    .enter().append("g")
+    .attr("class", "node")
+    .call(force.drag);
+
+node.append('circle')
+    .attr('r', width/100);
+    
+node.append("text")
+    .attr("dx", 12)
+    .attr("dy", ".35em")
+    .text(function(d) { return d.name });
+
+force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+});
+  
+/*
+// Now it's the nodes turn. Each node is drawn as a circle.
+var circle = svg.selectAll('.node')
+    .data(nodes)
+    .enter().append('circle')
+    .attr('class', 'node');
+    .on('mouseover', function(d) {
+        console.log(d.name);
+//        d3.select(this)
+//            .style('display', null);
+    })
+    .on('mouseout', function(d) {
+//        d3.select(this)        
+//            .style('display', 'none');
+    });
+*/
+/*
+var text = svg.selectAll('.node')
+    .data(nodes)
+    .enter().append('text')
+    .text(function(d) {return d.name;});
+*/
+/*  
+//Callback for when calculations are done
+force.on('end', function() {
+
+    // When this function executes, the force layout
+    // calculations have concluded. The layout will
+    // have set various properties in our nodes and
+    // links objects that we can use to position them
+    // within the SVG container.
+
+    // First let's reposition the nodes. As the force
+    // layout runs it updates the `x` and `y` properties
+    // that define where the node should be centered.
+    // To move the node, we set the appropriate SVG
+    // attributes to their new values. Also give the
+    // nodes a non-zero radius so they're visible.
+    circle.attr('r', width/100)
+        .attr('cx', function(d) { return d.x; })
+        .attr('cy', function(d) { return d.y; });
+
+    // We also need to update positions of the links.
+    // For those elements, the force layout sets the
+    // `source` and `target` properties, specifying
+    // `x` and `y` values in each case.
+    link.attr('x1', function(d) { return d.source.x; })
+        .attr('y1', function(d) { return d.source.y; })
+        .attr('x2', function(d) { return d.target.x; })
+        .attr('y2', function(d) { return d.target.y; });
+
+    text.attr('cx', function(d) { return d.x; })
+        .attr('cy', function(d) { return d.y; })
+        .attr('stroke', function(d) {return 'black';})
+        .attr('transform', function(d) {return 'translate('+d.x+','+d.y+')';});
+        //.attr('dx', function(d) {return '12';})
+        //.attr('dy', function(d) {return '.35em';});
+});
+*/
+force.start();
+    </script>
+</body>
+</html>

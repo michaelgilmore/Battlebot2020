@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!--http://alignedleft.com/tutorials/d3/drawing-divs-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script type="text/javascript" src="d3.v3.min.js"></script>
+        <script type="text/javascript" src="d3.geom.js"></script>
+        <script type="text/javascript" src="d3.layout.js"></script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            //setTimeout(function(){
+            //    window.location.reload(1);
+            //}, 5000);
+            var dataset = [5,10,25,20,25];
+            /*var dataset = [
+                "AController",
+                "BController",
+                "CTransform",
+                "DDao",
+                "EEnum",
+                "FDao",
+                "GController",
+                "HView",
+                "IView"
+            ];*/
+            var svg_width = 500;
+            var svg_height = 50;
+            var svg = d3.select("body")
+                .append("svg")
+                .attr("width", svg_width)
+                .attr("height", svg_height);
+            var circles = svg.selectAll("circle")
+                .data(dataset)
+                .enter()
+                .append("circle");
+            circles.attr("cx", function(d, i) {return (i*50)+25;})
+                .attr("cy", svg_height/2)
+                .attr("r", function(d) {return d;});
+            //<line x1="10" y1="10" x2="200" y2="20" stroke="blue" stroke-width="10"/>
+            console.log(circles.length + " circles");
+            for(var i = 1; i < circles.length; i++) {
+                svg.selectAll("line")
+                    .enter()
+                    .append("line")
+                    .attr("x1", circles[i-1].cx)
+                    .attr("y1", circles[i-1].cy)
+                    .attr("x2", circles[i].cx)
+                    .attr("y2", circles[i].cy)
+                    .attr("stroke", "blue")
+                    .attr("stroke-width", 10);
+                console.log(circles[i-1].cx + "," + circles[i-1].cy);
+            }
+        </script>
+    </body>
+</html>

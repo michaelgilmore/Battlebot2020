@@ -1,0 +1,59 @@
+import React, { Component } from 'react';
+import logo from './logo.svg';
+import './App.css';
+
+class App extends Component {
+  render() {
+    return (
+      <div className="App">
+        <div className="App-header">
+          <img src={logo} className="App-logo" alt="logo" />
+          <h2>Welcome to Mike's MBTA Departure Schedule React App</h2>
+        </div>
+        <p className="App-intro">
+          To get started, edit <code>src/App.js</code> and save to reload.
+        </p>
+      </div>
+    );
+  }
+}
+
+class DepartureBoard extends Component {
+  renderRow(i) {
+    return <DepartureBoardRow />;
+  }
+
+  render() {
+    return (
+      <DepartureBoardHeader />
+      {this.renderRow(1)}
+      <DepartureBoardFooter />
+    );
+  }
+}
+
+class DepartureBoardHeader extends Component {
+  render() {
+    return (
+      <h1>Header</h1>
+    );
+  }
+}
+
+class DepartureBoardRow extends Component {
+  render() {
+    return (
+      <h1>Row</h1>
+    );
+  }
+}
+
+class DepartureBoardFooter extends Component {
+  render() {
+    return (
+      <h1>Footer</h1>
+    );
+  }
+}
+
+export default App;

@@ -2,23 +2,17 @@ package cc.gilmore.apps.battlebot001;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.Button;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,232 +22,319 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String TAG = this.getClass().getSimpleName();
-    private String data;
-    byte[] messageBytes = null;
+    private TextView infoTextView;
+    private TextView logTextView;
 
-    private final String deviceNameHC05 = "HC-05";
-    private final String deviceNameHC08 = "HC-08";
-    private final String deviceNameHM10 = "HM-10";
+    private Button flButton;
+    private Button fButton;
+    private Button frButton;
+    private Button lButton;
+    private Button stopButton;
+    private Button rButton;
+    private Button blButton;
+    private Button bButton;
+    private Button brButton;
+
     private final String hc05DeviceAddress = "98:D3:71:FD:8A:8D";
-    private final String hc08DeviceAddress = "C8:FD:19:51:1C:20";
-
-    private boolean scan = false;
 
     public static final int REQUEST_ENABLE_BT = 1;
 
-    public final static String ACTION_GATT_CONNECTED = "ACTION_GATT_CONNECTED";
-    public final static String ACTION_GATT_DISCONNECTED = "ACTION_GATT_DISCONNECTED";
-    public final static String ACTION_GATT_SERVICES_DISCOVERED = "ACTION_GATT_SERVICES_DISCOVERED";
-    public final static String ACTION_DATA_AVAILABLE = "ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_UUID = "EXTRA_UUID";
-    public final static String EXTRA_DATA = "EXTRA_DATA";
-
     String SERVICE_ID = "00001101-0000-1000-8000-00805f9b34fb"; //SPP UUID
 
-    //BLE Scanner app
-    private DeviceInformationService deviceInformation; //180A
-    private GenericAccessService genericAccess;         //1800
-    private GenericAttributeService genericAttribute;   //1801
-    private CustomServiceE serviceE;                    //FFE0
-    private CustomServiceF serviceF;                    //FFF0
-
-    ListView listView;
-
-    //https://developer.android.com/guide/topics/connectivity/bluetooth#ConnectDevices
-    private BluetoothAdapter mmAdapter;
-    private BluetoothGatt mmGatt;
-    private BluetoothSocket mmSocket;
-    private BluetoothDevice mmDevice;
-    private Set<BluetoothDevice> scannedDevices = new HashSet<>();
-    BluetoothGattService mmService;
-    BluetoothGattCharacteristic mmCharacteristic;
-    private UUID serviceUuid;
-    private UUID characteristicUuid;
-    private OutputStream out;
+    private BluetoothManager bluetoothManager;
+    private BluetoothAdapter bluetoothAdapter;
+    private BluetoothDevice bluetoothDevice;
+    private OutputStream bluetoothOutputStream;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        deviceInformation = new DeviceInformationService(); //180A
-        genericAccess = new GenericAccessService();         //1800
-        genericAttribute = new GenericAttributeService();   //1801
-        serviceF = new CustomServiceF();                    //FFF0
-        serviceE = new CustomServiceE();                    //FFE0
+        initializeControls();
 
-        serviceUuid = serviceF.uuid;
-        characteristicUuid = serviceF.getCharacteristic("1").uuid;
+        initializeBluetoothComponents();
+    }
 
-        final BluetoothManager bluetoothManager =
-                (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mmAdapter = bluetoothManager.getAdapter();
+    private void initializeBluetoothComponents() {
 
-        if(mmAdapter == null || !mmAdapter.isEnabled()) {
+        if(bluetoothManager == null){
+            bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        }
+        logTextView.setText("Got bluetooth manager\n" + logTextView.getText());
+
+        if(bluetoothAdapter == null){
+            bluetoothAdapter = bluetoothManager.getAdapter();
+        }
+        if(bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            bluetoothAdapter = bluetoothManager.getAdapter();
         }
+        logTextView.setText("Got bluetooth adapter\n" + logTextView.getText());
 
-        if(scan) {
-            mmAdapter.startDiscovery();
+        if(bluetoothDevice == null){
+            bluetoothDevice = bluetoothAdapter.getRemoteDevice(hc05DeviceAddress);
         }
-        else {
-            mmDevice = mmAdapter.getRemoteDevice(hc05DeviceAddress);
-            mmGatt = mmDevice.connectGatt(this, true, gattCallback);
+        logTextView.setText("Got bluetooth device\n" + logTextView.getText());
 
-            try {
-                BluetoothSocket socket = mmDevice.createRfcommSocketToServiceRecord(UUID.fromString(SERVICE_ID));
-                socket.connect();
-                out = socket.getOutputStream();
-                //byte[] twoByteData = new byte[1];
-                //twoByteData[0] = (byte)'r';
-                //out.write(twoByteData);
-            }
-            catch(IOException e) {
-                Log.e("BT MG", e.getMessage());
-            }
-
-            /*
-            ParcelUuid[] uuids = mmDevice.getUuids();
-
-            for(ParcelUuid id : uuids) {
-                Log.d("U", id.getUuid().toString());
-            }
-            */
-        }
-    }
-
-    private BluetoothAdapter.LeScanCallback scanCallback = new BluetoothAdapter.LeScanCallback() {
-        @Override
-        public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-            if(!scannedDevices.contains(device) && null != device.getName()) {
-                if(null == mmDevice) {
-                    mmDevice = device;
-                }
-            };
-        }
-    };
-
-    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
-        @Override
-        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            String intentAction;
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                intentAction = ACTION_GATT_CONNECTED;
-                broadcastUpdate(intentAction);
-                Log.i(TAG, "Connected to GATT server.");
-                // Attempts to discover services after successful connection.
-
-                boolean startedDiscovery = mmGatt.discoverServices();
-                Log.i(TAG, "Attempting to start service discovery:" + startedDiscovery);
-
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                intentAction = ACTION_GATT_DISCONNECTED;
-                Log.i(TAG, "Disconnected from GATT server.");
-                broadcastUpdate(intentAction);
-            }
-        }
-
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            if(status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
-
-                if (gatt == mmGatt) {
-                    Log.d(TAG, "");
-                } else {
-                    Log.d(TAG, "");
-                }
-
-                writeDataToServiceCharacteristic();
-            }
-        }
-
-        @Override
-        public void onCharacteristicWrite (BluetoothGatt gatt,
-                                           BluetoothGattCharacteristic characteristic,
-                                           int status) {
-            Log.d(TAG, "");
-
-        }
-    };
-
-    private void writeDataToServiceCharacteristic() {
-        mmService = mmGatt.getService(serviceUuid);
-        mmCharacteristic = mmService.getCharacteristic(characteristicUuid);
-        boolean setNotification = mmGatt.setCharacteristicNotification(mmCharacteristic, true);
-
-        byte[] twoByteData = new byte[1];
-        twoByteData[0] = (byte)'r';
-        //twoByteData[1] = (byte)'\r';
-        mmCharacteristic.setValue(twoByteData);
-
-        if (mmGatt.writeCharacteristic(mmCharacteristic)) {
-            Log.e(TAG, "");
-        }
-        else {
-            Log.e(TAG, "");
-        }
-    }
-
-    private void broadcastUpdate(final String action) {
-        final Intent intent = new Intent(action);
-        sendBroadcast(intent);
-    }
-
-    public void onBClick(View view) {
         try {
-            byte[] twoByteData = new byte[1];
-            twoByteData[0] = (byte)'b';
-            out.write(twoByteData);
+            BluetoothSocket socket = bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString(SERVICE_ID));
+            socket.connect();
+            logTextView.setText("Connected to bluetooth socket\n" + logTextView.getText());
+            bluetoothOutputStream = socket.getOutputStream();
+            logTextView.setText("Got bluetooth socket output stream\n" + logTextView.getText());
         }
         catch(IOException e) {
             Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error create");
+        }
+    }
+
+    private void initializeControls() {
+        infoTextView = (TextView)findViewById(R.id.infoTextView);
+        logTextView = (TextView)findViewById(R.id.logTextView);
+
+        flButton = (Button)findViewById(R.id.flButton);
+        fButton = (Button)findViewById(R.id.fButton);
+        frButton = (Button)findViewById(R.id.frButton);
+        lButton = (Button)findViewById(R.id.lButton);
+        stopButton = (Button)findViewById(R.id.buttonStop);
+        rButton = (Button)findViewById(R.id.rButton);
+        blButton = (Button)findViewById(R.id.blButton);
+        bButton = (Button)findViewById(R.id.bButton);
+        brButton = (Button)findViewById(R.id.brButton);
+
+        View.OnTouchListener buttonTouchListener = new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                if (event.getAction()==MotionEvent.ACTION_DOWN)
+                    switch(view.getId()){
+                        case R.id.flButton:
+                            onFLClick(view);
+                            break;
+                        case R.id.fButton:
+                            onFClick(view);
+                            break;
+                        case R.id.frButton:
+                            onFRClick(view);
+                            break;
+                        case R.id.lButton:
+                            onLClick(view);
+                            break;
+                        case R.id.buttonStop:
+                            onStopClick(view);
+                            break;
+                        case R.id.rButton:
+                            onRClick(view);
+                            break;
+                        case R.id.blButton:
+                            onBLClick(view);
+                            break;
+                        case R.id.bButton:
+                            onBClick(view);
+                            break;
+                        case R.id.brButton:
+                            onBRClick(view);
+                            break;
+                        default:
+                            logTextView.setText("Unexpected id in touch handler\n" + logTextView.getText());
+                            break;
+                    }
+                else
+                    onStopClick(stopButton);
+                return true;
+            }
+        };
+
+        flButton.setOnTouchListener(buttonTouchListener);
+        fButton.setOnTouchListener(buttonTouchListener);
+        frButton.setOnTouchListener(buttonTouchListener);
+        lButton.setOnTouchListener(buttonTouchListener);
+        stopButton.setOnTouchListener(buttonTouchListener);
+        rButton.setOnTouchListener(buttonTouchListener);
+        blButton.setOnTouchListener(buttonTouchListener);
+        bButton.setOnTouchListener(buttonTouchListener);
+        brButton.setOnTouchListener(buttonTouchListener);
+    }
+
+    public void onBClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
+        try {
+            byte[] twoByteData = new byte[1];
+            twoByteData[0] = (byte)'b';
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Backward\n" + logTextView.getText());
+        }
+        catch(IOException e) {
+            Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error B");
+        }
+    }
+
+    public void onBLClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
+        try {
+            byte[] twoByteData = new byte[1];
+            twoByteData[0] = (byte)'b';
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Backward left\n" + logTextView.getText());
+        }
+        catch(IOException e) {
+            Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error BL");
+        }
+    }
+
+    public void onBRClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
+        try {
+            byte[] twoByteData = new byte[1];
+            twoByteData[0] = (byte)'b';
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Backward right\n" + logTextView.getText());
+        }
+        catch(IOException e) {
+            Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error BR");
         }
     }
 
     public void onFClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
         try {
             byte[] twoByteData = new byte[1];
             twoByteData[0] = (byte)'f';
-            out.write(twoByteData);
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Forward\n" + logTextView.getText());
         }
         catch(IOException e) {
             Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error F");
+        }
+    }
+
+    public void onFLClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
+        try {
+            byte[] twoByteData = new byte[1];
+            twoByteData[0] = (byte)'f';
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Forward left\n" + logTextView.getText());
+        }
+        catch(IOException e) {
+            Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error FL");
+        }
+    }
+
+    public void onFRClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
+        try {
+            byte[] twoByteData = new byte[1];
+            twoByteData[0] = (byte)'f';
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Forward right\n" + logTextView.getText());
+        }
+        catch(IOException e) {
+            Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error FR");
         }
     }
 
     public void onRClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
         try {
             byte[] twoByteData = new byte[1];
             twoByteData[0] = (byte)'r';
-            out.write(twoByteData);
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Right\n" + logTextView.getText());
         }
         catch(IOException e) {
             Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error R");
         }
     }
 
     public void onLClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
         try {
             byte[] twoByteData = new byte[1];
             twoByteData[0] = (byte)'l';
-            out.write(twoByteData);
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Left\n" + logTextView.getText());
         }
         catch(IOException e) {
             Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error L");
         }
     }
 
     public void onStopClick(View view) {
+        if(bluetoothOutputStream == null){
+            initializeBluetoothComponents();
+            if(bluetoothOutputStream == null) {
+                infoTextView.setText("No socket");
+                return;
+            }
+        }
         try {
             byte[] twoByteData = new byte[1];
             twoByteData[0] = (byte)'s';
-            out.write(twoByteData);
+            bluetoothOutputStream.write(twoByteData);
+            logTextView.setText("Stop\n" + logTextView.getText());
         }
         catch(IOException e) {
             Log.e("BT MG", e.getMessage());
+            infoTextView.setText("Error S");
         }
     }
 }
